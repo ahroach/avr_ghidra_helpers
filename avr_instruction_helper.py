@@ -1,4 +1,5 @@
-# Ghidra script to give AVR instruction descriptions in EOL comments of selection
+# Create EOL comments with AVR instruction descriptions
+# @author: Austin Roach <ahroach@gmail.com>
 # @category: Instructions.AVR
 
 # Descriptions from Atmega328p datasheet
@@ -131,14 +132,9 @@ def get_mnemonic(thisInstr):
 def get_operand(thisInstr, opNum):
     return thisInstr.getDefaultOperandRepresentation(opNum)
 
-currAddr = currentSelection.getMinAddress()
-currInstr = getInstructionAt(currAddr)
-
-while currAddr < currentSelection.getMaxAddress():
-    # Check to be sure that this instruction is in the selection, to handle
-    # non-contiguous selection regions
-    if currentSelection.contains(currInstr.getInstructionContext().getAddress()):
+def add_instr_desc_comment(currInstr):
         currMnemonic = get_mnemonic(currInstr)
+        currAddr = currInstr.getInstructionContext().getAddress()
 
         # Special case to handle pre-decrement/post-increment variants of ld
         if currMnemonic == "ld":
@@ -168,12 +164,42 @@ while currAddr < currentSelection.getMaxAddress():
                 if get_operand(currInstr, 0)[1] == "+":
                     currMnemonic = "lpm+"
 
+        # Add a comment for the current mnemonic
         add_eol_comment(_AVR_INSTRUCTIONS[currMnemonic], currAddr)
 
-    currInstr = currInstr.getNext()
-    if not(currInstr):
-        # No more instructions in the selection
-        break
+def loop_over_selection():
+    # If no selection, try to add a comment for the current address
+    if currentSelection is None:
+        currInstr = getInstructionAt(currentAddress)
+        if currInstr:
+            add_instr_desc_comment(currInstr)
+        return
 
-    currAddr = currInstr.getInstructionContext().getAddress()
+    currAddr = currentSelection.getMinAddress()
+    currInstr = getInstructionAt(currAddr)
+    if not currInstr:
+        # There's no instruction at the current address, so try to find one
+        # later in the selection
+        currInstr = getInstructionAfter(currAddr)
+        if not currInstr:
+            # We must not have one at all
+            return
+        currAddr = currInstr.getInstructionContext().getAddress()
+
+
+    while currAddr < currentSelection.getMaxAddress():
+        # Check to be sure that this instruction is in the selection, to handle
+        # non-contiguous selection regions
+        if currentSelection.contains(currInstr.getInstructionContext().getAddress()):
+            add_instr_desc_comment(currInstr)
+
+        currInstr = currInstr.getNext()
+        if not(currInstr):
+            # No more instructions in the selection
+            break
+
+        currAddr = currInstr.getInstructionContext().getAddress()
+
+if __name__ == "__main__":
+    loop_over_selection()
 
