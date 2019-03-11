@@ -53,9 +53,9 @@ EICALL,         87
 EIJMP,          88
 ELPM,           89
 EOR,            91
-FRACMUL,        92
-FRACMULS,       94
-FRACMULSU,      96
+FMUL,           92
+FMULS,          94
+FMULSU,         96
 ICALL,          98
 IJMP,           99
 IN,             100
