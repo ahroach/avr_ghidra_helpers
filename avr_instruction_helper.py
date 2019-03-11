@@ -29,9 +29,9 @@ _AVR_INSTRUCTIONS = \
   "mul": "Multiply unsigned",
   "muls": "Multiply signed",
   "mulsu": "Multiply signed with unsigned",
-  "fracmul": "Fractional multiply unsigned",
-  "fracmuls": "Fractional multiply signed",
-  "fracmulsu": "Fractional multiply signed with unsigned",
+  "fmul": "Fractional multiply unsigned",
+  "fmuls": "Fractional multiply signed",
+  "fmulsu": "Fractional multiply signed with unsigned",
   "rjmp": "Relative jump",
   "ijmp": "Indirect jump to (Z)",
   "jmp": "Direct jump",
@@ -139,29 +139,26 @@ def add_instr_desc_comment(currInstr):
         # Special case to handle pre-decrement/post-increment variants of ld
         if currMnemonic == "ld":
             secondOperand = get_operand(currInstr, 1)
-
-            # '+' is not stored as a second character in the operand, but
-            # rather a separator character after the operand. Not sure
-            # how common this is...
-            if currInstr.getSeparator(2) == "+":
-                currMnemonic = "ld+"
-            elif len(secondOperand) == 2 and get_operand(currInstr, 1)[0] == "-":
-                currMnemonic = "-ld"
+            if len(secondOperand) == 2:
+                if secondOperand[1] == "+":
+                    currMnemonic = "ld+"
+                elif secondOperand[0] == "-":
+                    currMnemonic = "-ld"
 
         # Special case to handle pre-decrement/post-increment variants of st
         if currMnemonic == "st":
             firstOperand = get_operand(currInstr, 0)
             if len(firstOperand) == 2:
-                if get_operand(currInstr, 0)[1] == "+":
+                if firstOperand[1] == "+":
                     currMnemonic = "st+"
-                elif get_operand(currInstr, 0)[0] == "-":
+                elif firstOperand[0] == "-":
                     currMnemonic = "-st"
 
-        # Special case to handle pre-decrement/post-increment variants of st
+        # Special case to handle pre-decrement/post-increment variants of lpm
         if currMnemonic == "lpm":
-            firstOperand = get_operand(currInstr, 0)
-            if len(firstOperand) == 2:
-                if get_operand(currInstr, 0)[1] == "+":
+            secondOperand = get_operand(currInstr, 1)
+            if len(secondOperand) == 2:
+                if secondOperand[1] == "+":
                     currMnemonic = "lpm+"
 
         # Add a comment for the current mnemonic
