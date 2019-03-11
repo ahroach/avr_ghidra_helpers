@@ -114,6 +114,8 @@ define token opword (16)
 	oplow12       = ( 0,11)
 	oplow12signed = ( 0,11) signed
 	oplow4        = ( 0, 3)
+	oplow3_cc_set = ( 0, 2)
+        oplow3_cc_clr = ( 0, 2)
 	oplow3_flag   = ( 0, 2)
 	oplow3        = ( 0, 2)
 	oplow2        = ( 0, 1)
@@ -225,6 +227,14 @@ define token opfusionLdsw(64) # lds lds
 
 attach variables [ oplow3_flag op4to6_flag ] [
   Cflg Zflg Nflg Vflg Sflg Hflg Tflg Iflg
+];
+
+attach names [ oplow3_cc_set ] [
+ cs eq mi vs lt hs ts ie
+];
+
+attach names [ oplow3_cc_clr ] [
+ cc ne pl vc ge hc tc id
 ];
 
 attach variables [ RdHi RrHi f3op2RdHi ]  [ 
@@ -507,22 +517,29 @@ define pcodeop break;
   RdFull = (RdFull & mask) | b;
 }
 # brbc s,k
-:brbc rel7dst,oplow3_flag is phase=1 & ophi6=0x3d & rel7dst & oplow3_flag { 
+# General brbc instruction replaced by condition-code specific variants below
+#:brbc rel7dst,oplow3_flag is phase=1 & ophi6=0x3d & rel7dst & oplow3_flag { 
+#  if (!oplow3_flag)
+#    goto rel7dst;
+#}
+:br^oplow3_cc_clr rel7dst is phase=1 & ophi6=0x3d & rel7dst & oplow3_cc_clr & oplow3_flag{ 
   if (!oplow3_flag)
     goto rel7dst;
 }
+
 # brbs s,k  (see prev instruction)
-:brbs rel7dst,oplow3_flag is phase=1 & ophi6=0x3c & rel7dst & oplow3_flag {
+# General brbs instruction replaced by condition-code specific variants below
+#:brbs rel7dst,oplow3_flag is phase=1 & ophi6=0x3c & rel7dst & oplow3_flag {
+#  if (oplow3_flag)
+#    goto rel7dst;
+#}
+:br^oplow3_cc_set rel7dst is phase=1 & ophi6=0x3c & rel7dst & oplow3_cc_set & oplow3_flag {
   if (oplow3_flag)
     goto rel7dst;
 }
-# brcs and brcc seem to be special cases of brbs
 :break is phase=1 & ophi16=0x9598 { 
   break();
 }
-# Probably want to check for various decode logic for conditional branches...
-#   ... specifically BRBS 1,k
-# breq k    - really is BRBS 1,k
 # bset s
 :bset op4to6_flag is phase=1 & ophi9=(0x94<<1) & oplow4=0x8 & op4to6_flag { 
   op4to6_flag = 1;
