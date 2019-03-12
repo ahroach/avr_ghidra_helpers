@@ -122,9 +122,11 @@ _AVR_INSTRUCTIONS = \
   "break": "Break"}
 
 def add_eol_comment(comment, addr):
-    listing = currentProgram.getListing()
-    codeUnit = listing.getCodeUnitAt(addr)
-    codeUnit.setComment(codeUnit.EOL_COMMENT, comment)
+    # Don't trample previous EOL comments
+    if getEOLComment(addr) is None:
+        listing = currentProgram.getListing()
+        codeUnit = listing.getCodeUnitAt(addr)
+        codeUnit.setComment(codeUnit.EOL_COMMENT, comment)
 
 def get_mnemonic(thisInstr):
     return thisInstr.getPrototype().getMnemonic(thisInstr.getInstructionContext())
